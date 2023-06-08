@@ -77,7 +77,7 @@ jobs:
           extra_nix_config: |
             extra-substituters = https://fuellabs.cachix.org
             extra-trusted-public-keys = fuellabs.cachix.org-1:3gOmll82VDbT7EggylzOVJ6dr0jgPVU/KMN6+Kf8qx8=
-      - run: nix shell github:fuellabs/fuel.nix#forc-0-39-0
+      - run: nix profile install github:fuellabs/fuel.nix#forc-0-39-0
 
       - name: Check Sway formatting
         run: |
