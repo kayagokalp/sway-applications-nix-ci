@@ -93,7 +93,7 @@ jobs:
       - run: |
           NIX_STORE=/nix/store
           if [[ "$CACHE_HIT" != 'true' ]]; then
-            nix profile install github:fuellabs/fuel.nix#fuel-beta-3
+            nix profile install github:fuellabs/fuel.nix#fuel-nightly-2023-04-12
             mkdir -p ~/nix/store
             sudo cp --force --recursive $NIX_STORE/* ~/nix/store/
           else
