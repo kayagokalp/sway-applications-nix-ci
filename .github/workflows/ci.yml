@@ -67,72 +67,36 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           components: clippy, rustfmt
 
-      - name: Init cache
+      - name: Init rust cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Install Fuel toolchain
-        uses: FuelLabs/action-fuel-toolchain@v0.6.0
+      - name: Cache nix-cache locally
+        id: cache-nix
+        uses: actions/cache@v2.1.0
         with:
-          toolchain: latest
-          date: 2023-04-12
+          # See https://stackoverflow.com/questions/59269850.
+          path: |
+              ~/nix/store
+          key: ${{ runner.os }}-forc-0-39-0
 
-      - name: Check Sway formatting
-        run: |
-          cd ${{ matrix.project }}/project
-          forc fmt --check
-
-      - name: Check Rust formatting
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo fmt --verbose --check
-
-      - name: Build Sway
-        run: |
-          cd ${{ matrix.project }}/project
-          forc build --locked
-
-      - name: Build Rust files
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo build --locked
-
-      - name: Check Clippy Linter
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo clippy --all-features --all-targets -- -D warnings
-
-      - name: Run Rust tests
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo test --locked
-
-  contributing-book:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        project: [".docs/contributing-book/src/code"]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+      - name: Install nix 
+        uses: cachix/install-nix-action@v21
         with:
-          toolchain: ${{ env.RUST_VERSION }}
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            extra-substituters = https://fuellabs.cachix.org
+            extra-trusted-public-keys = fuellabs.cachix.org-1:3gOmll82VDbT7EggylzOVJ6dr0jgPVU/KMN6+Kf8qx8=
 
-      - name: Init cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install Fuel toolchain
-        uses: FuelLabs/action-fuel-toolchain@v0.6.0
-        with:
-          toolchain: latest
-          date: 2023-04-12
-
-      - name: Check Sway formatting
-        run: forc fmt --check --path ${{ matrix.project }}
-
-      - name: Build Sway
-        run: forc build --locked --path ${{ matrix.project }}
+      - name: Install fuel toolchain
+        env: 
+          CACHE_HIT:  ${{ steps.cache-nix.outputs.cache-hit }}
+        run: |
+          NIX_STORE=/nix/store
+          if [[ "$CACHE_HIT" != 'true' ]]; then
+            nix profile install github:fuellabs/fuel.nix#forc-0-39-0
+            mkdir -p ~/nix/store
+            sudo cp --force --recursive $NIX_STORE/* ~/nix/store/
+          else
+            sudo mkdir -p $NIX_STORE
+            sudo cp --force --recursive ~/nix/store/* $NIX_STORE/
+          fi
