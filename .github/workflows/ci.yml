@@ -67,17 +67,39 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           components: clippy, rustfmt
 
-      - name: Init cache
+      - name: Init rust cache
         uses: Swatinem/rust-cache@v2
 
+      - name: Cache nix-cache locally
+        id: cache-nix
+        uses: actions/cache@v2.1.0
+        with:
+          # See https://stackoverflow.com/questions/59269850.
+          path: |
+              ~/nix/store
+              ~/nix/bin
+          # Using number to enforce fresh cache.
+          key: ${{ runner.os }}-15
+
       - name: Install fuel toolchain
+        env: 
+          CACHE_HIT:  ${{ steps.cache-nix.outputs.cache-hit }}
         uses: cachix/install-nix-action@v21
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             extra-substituters = https://fuellabs.cachix.org
             extra-trusted-public-keys = fuellabs.cachix.org-1:3gOmll82VDbT7EggylzOVJ6dr0jgPVU/KMN6+Kf8qx8=
-      - run: nix profile install github:fuellabs/fuel.nix#forc-0-39-0
+      - run: |
+          NIX_STORE=/nix/store
+          if [[ "$CACHE_HIT" != 'true' ]]; then
+            nix profile install github:fuellabs/fuel.nix#forc-0-39-0
+            mkdir -p ~/nix/store
+            sudo cp --force --recursive $NIX_STORE/* ~/nix/store/
+          else
+            sudo mkdir -p $NIX_STORE
+            sudo cp --force --recursive ~/nix/store/* $NIX_STORE/
+          fi
 
       - name: Check Sway formatting
         run: |
