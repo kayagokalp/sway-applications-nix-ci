@@ -79,7 +79,7 @@ jobs:
               ~/nix/store
               ~/nix/bin
           # Using number to enforce fresh cache.
-          key: ${{ runner.os }}-15
+          key: forc-0-39-0
 
       - name: Install fuel toolchain
         env: 
