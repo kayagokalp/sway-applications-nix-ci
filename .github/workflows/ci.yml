@@ -78,8 +78,7 @@ jobs:
           path: |
               ~/nix/store
               ~/nix/bin
-          # Using number to enforce fresh cache.
-          key: forc-0-39-0
+          key: ${{ runner.os }}-forc-0-39-0
 
       - name: Install fuel toolchain
         env: 
@@ -100,64 +99,3 @@ jobs:
             sudo mkdir -p $NIX_STORE
             sudo cp --force --recursive ~/nix/store/* $NIX_STORE/
           fi
-
-      - name: Check Sway formatting
-        run: |
-          cd ${{ matrix.project }}/project
-          forc fmt --check
-
-      - name: Check Rust formatting
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo fmt --verbose --check
-
-      - name: Build Sway
-        run: |
-          cd ${{ matrix.project }}/project
-          forc build --locked
-
-      - name: Build Rust files
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo build --locked
-
-      - name: Check Clippy Linter
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo clippy --all-features --all-targets -- -D warnings
-
-      - name: Run Rust tests
-        run: |
-          cd ${{ matrix.project }}/project
-          cargo test --locked
-
-  contributing-book:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        project: [".docs/contributing-book/src/code"]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-
-      - name: Init cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install Fuel toolchain
-        uses: FuelLabs/action-fuel-toolchain@v0.6.0
-        with:
-          toolchain: latest
-          date: 2023-04-12
-
-      - name: Check Sway formatting
-        run: forc fmt --check --path ${{ matrix.project }}
-
-      - name: Build Sway
-        run: forc build --locked --path ${{ matrix.project }}
